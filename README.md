@@ -19,4 +19,4 @@ Commencez par cloner le projet depuis GitHub. Ouvrez votre terminal et exécutez
 git clone https://github.com/luvth/pyrfetch
 cd pyrfetch
 chmod +x setup.sh
-./setup.sh
+./setup.sh && cd && clear && pyrfetch
