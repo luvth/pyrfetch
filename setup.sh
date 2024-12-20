@@ -2,4 +2,5 @@
 
 chmod +x pyrfetch
 sudo mv ~/pyrfetch/pyrfetch /bin 
-sudo rmdir -rf ~/pyrfetch
+sudo rm -rf ~/pyrfetch/
+sudo rmdir ~/pyrfetch
