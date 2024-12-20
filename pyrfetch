@@ -18,26 +18,46 @@ ascii_art = [
     r"/_-''    ''-_\     "
 ]
 
+def getOsName(): # Get the OS name from /etc/os-release instead of platform.system()
+    with open("/etc/os-release", "r") as file:
+        for line in file:
+            if "PRETTY_NAME" in line:
+                return line.split("=")[1].strip().replace('"', '')
+    return platform.system() # Fallback
+
+
+def format_uptime(seconds): # Format uptime with a custom string
+    days, seconds = divmod(seconds, 86400)
+    hours, seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    return f"{days}d {hours}h {minutes}m {seconds}s" if days else f"{hours}h {minutes}m {seconds}s"
+
+
 def get_system_info(show_percentage, include_disk, include_temp, export_file):
-    os_name = platform.system()
+    os_name = getOsName()
     kernel = platform.release()
     hostname = socket.gethostname()
     boot_time = psutil.boot_time()
     uptime_seconds = int(time.time() - boot_time)
-    uptime_str = time.strftime("%H:%M:%S", time.gmtime(uptime_seconds))
+    uptime_str = format_uptime(uptime_seconds)
     
-    cpu_name = "Unknown"
-    if os_name == "Linux":
-        with open("/proc/cpuinfo", "r") as f:
-            for line in f:
-                if "model name" in line:
-                    cpu_name = line.split(":")[1].strip()
-                    break
+    cpu_name = "Unknown" 
+    with open("/proc/cpuinfo", "r") as f:
+        for line in f:
+            if "model name" in line:
+                cpu_name = line.split(":")[1].strip()
+                break
 
     try:
-        gpu = subprocess.check_output("nvidia-smi --query-gpu=name --format=csv,noheader", shell=True).decode("utf-8").strip()
+        gpu = "N/A"
+        result = subprocess.run(["lspci"], stdout=subprocess.PIPE, text=True) # Use lspci intead of nvidia-smi for better compatibility with other GPUs
+        for line in result.stdout.splitlines():
+            if "VGA compatible controller" in line or "3D controller" in line:
+                gpu = line.split(":")[2].strip()
+                break
+        show_gpu = True
     except subprocess.CalledProcessError:
-        gpu = "No GPU found or unsupported."
+        show_gpu = False
 
     ram = psutil.virtual_memory()
     if show_percentage:
@@ -66,13 +86,15 @@ def get_system_info(show_percentage, include_disk, include_temp, export_file):
         f"Kernel: {kernel}",
         f"Hostname: {hostname}",
         f"Uptime: {uptime_str}",
-        f"CPU: {cpu_name}",
         f"RAM: {ram_info}",
-        f"GPU: {gpu}",
+        f"CPU: {cpu_name}",
         f"Disk: {disk_info if include_disk else 'N/A'}",
         f"Temp: {temperature}",
         "", ""
     ]
+    
+    if show_gpu:
+        info.insert(6, f"GPU: {gpu}")  # Only show GPU if it was found
 
     print("")
     for i in range(len(ascii_art)):
