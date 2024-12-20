@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+
+import platform
+import socket
+import psutil
+import subprocess
+import time
+import argparse
+import json
+
+ascii_art = [
+    "      /\\           ",
+    "     /  \\          ",
+    "    /    \\         ",
+    "   /      \\        ",
+    "  /   ,,   \\       ",
+    " /   |  |   \\      ",
+    r"/_-''    ''-_\     "
+]
+
+def get_system_info(show_percentage, include_disk, include_temp, export_file):
+    os_name = platform.system()
+    kernel = platform.release()
+    hostname = socket.gethostname()
+    boot_time = psutil.boot_time()
+    uptime_seconds = int(time.time() - boot_time)
+    uptime_str = time.strftime("%H:%M:%S", time.gmtime(uptime_seconds))
+    
+    cpu_name = "Unknown"
+    if os_name == "Linux":
+        with open("/proc/cpuinfo", "r") as f:
+            for line in f:
+                if "model name" in line:
+                    cpu_name = line.split(":")[1].strip()
+                    break
+
+    try:
+        gpu = subprocess.check_output("nvidia-smi --query-gpu=name --format=csv,noheader", shell=True).decode("utf-8").strip()
+    except subprocess.CalledProcessError:
+        gpu = "No GPU found or unsupported."
+
+    ram = psutil.virtual_memory()
+    if show_percentage:
+        ram_info = f"{ram.percent}%"
+    else:
+        ram_info = f"{ram.used / (1024 ** 3):.2f}/{ram.total / (1024 ** 3):.2f} Go"
+    
+    disk_info = "N/A"
+    if include_disk:
+        disk = psutil.disk_usage('/')
+        disk_info = f"{disk.used / (1024 ** 3):.2f}/{disk.total / (1024 ** 3):.2f} Go ({disk.percent}%)"
+
+    temperature = "N/A"
+    if include_temp:
+        try:
+            temp = psutil.sensors_temperatures()
+            if 'coretemp' in temp:
+                temperature = f"{temp['coretemp'][0].current}°C"
+            else:
+                temperature = "N/A"
+        except AttributeError:
+            temperature = "Unsupported on this system."
+
+    info = [
+        f"OS: {os_name}",
+        f"Kernel: {kernel}",
+        f"Hostname: {hostname}",
+        f"Uptime: {uptime_str}",
+        f"CPU: {cpu_name}",
+        f"RAM: {ram_info}",
+        f"GPU: {gpu}",
+        f"Disk: {disk_info if include_disk else 'N/A'}",
+        f"Temp: {temperature}",
+        "", ""
+    ]
+
+    print("")
+    for i in range(len(ascii_art)):
+        if i < len(info):
+            print(f"{ascii_art[i]}{info[i]}")
+        else:
+            print(ascii_art[i])
+    print("")
+
+    if export_file:
+        data = {
+            "OS": os_name,
+            "Kernel": kernel,
+            "Hostname": hostname,
+            "Uptime": uptime_str,
+            "CPU": cpu_name,
+            "RAM": ram_info,
+            "GPU": gpu,
+            "Disk": disk_info if include_disk else "N/A",
+            "Temp": temperature
+        }
+        with open(export_file, 'w') as f:
+            json.dump(data, f, indent=4)
+        print(f"\nInformations exportées vers {export_file}")
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Affiche des informations système.")
+    parser.add_argument("--pourcentage", action="store_true", help="Afficher l'utilisation de la RAM en pourcentage.")
+    parser.add_argument("--disk", action="store_true", help="Inclure les informations sur l'espace disque.")
+    parser.add_argument("--temp", action="store_true", help="Inclure la température des composants (si disponible).")
+    parser.add_argument("--export", type=str, help="Exporter les informations dans un fichier JSON.")
+    return parser.parse_args()
+
+if __name__ == "__main__":
+    args = parse_args()
+    get_system_info(args.pourcentage, args.disk, args.temp, args.export)
