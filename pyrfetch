@@ -15,7 +15,8 @@ ascii_art = [
     "   /      \\        ",
     "  /   ,,   \\       ",
     " /   |  |   \\      ",
-    r"/_-''    ''-_\     "
+    r"/_-''    ''-_\     ",
+    "                   ",
 ]
 
 def getOsName(): # Get the OS name from /etc/os-release instead of platform.system()
@@ -31,6 +32,18 @@ def format_uptime(seconds): # Format uptime with a custom string
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
     return f"{days}d {hours}h {minutes}m {seconds}s" if days else f"{hours}h {minutes}m {seconds}s"
+
+def get_gpus_info():
+    try:
+        gpu = ["N/A"]
+        result = subprocess.run(["lspci"], stdout=subprocess.PIPE, text=True) # Use lspci intead of nvidia-smi for better compatibility with other GPUs
+        for line in result.stdout.splitlines():
+            if "VGA compatible controller" in line or "3D controller" in line:
+                gpu.append(line.split(":")[2].strip())
+        show_gpu = True
+    except subprocess.CalledProcessError:
+        show_gpu = False
+    return (show_gpu, gpu)
 
 
 def get_system_info(show_percentage, include_disk, include_temp, export_file):
@@ -48,16 +61,7 @@ def get_system_info(show_percentage, include_disk, include_temp, export_file):
                 cpu_name = line.split(":")[1].strip()
                 break
 
-    try:
-        gpu = "N/A"
-        result = subprocess.run(["lspci"], stdout=subprocess.PIPE, text=True) # Use lspci intead of nvidia-smi for better compatibility with other GPUs
-        for line in result.stdout.splitlines():
-            if "VGA compatible controller" in line or "3D controller" in line:
-                gpu = line.split(":")[2].strip()
-                break
-        show_gpu = True
-    except subprocess.CalledProcessError:
-        show_gpu = False
+    show_gpu, gpu = get_gpus_info()
 
     ram = psutil.virtual_memory()
     if show_percentage:
@@ -94,7 +98,11 @@ def get_system_info(show_percentage, include_disk, include_temp, export_file):
     ]
     
     if show_gpu:
-        info.insert(6, f"GPU: {gpu}")  # Only show GPU if it was found
+        if len(gpu) > 1:
+            for i, g in enumerate(gpu[1:]):
+                info.insert(6+i, f"GPU: {g}")
+        else:
+            info.insert(6, f"GPU: {gpu[0]}")
 
     print("")
     for i in range(len(ascii_art)):
