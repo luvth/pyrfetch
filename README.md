@@ -20,7 +20,7 @@ Start by cloning the project from GitHub. Open your terminal and run the followi
 git clone https://github.com/luvth/pyrfetch
 cd pyrfetch
 chmod +x setup.sh
-./setup.sh && cd && clear && pyrfetch
+./setup.sh && cd && clear && pyrfetch``
 
 ### French:
 
