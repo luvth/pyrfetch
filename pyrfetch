@@ -10,6 +10,23 @@ import json
 import shutil
 import re
 
+COLORS = {
+    "default": "\033[0m",
+    "blanc": "\033[37m",
+    "rouge": "\033[31m",
+    "vert": "\033[32m",
+    "jaune": "\033[33m",
+    "bleu": "\033[34m",
+    "violet": "\033[35m",
+    "cyan": "\033[36m",
+    "rose": "\033[95m",
+    "orange": "\033[91m",
+    "lime": "\033[92m",
+    "azur": "\033[94m",
+    "magenta": "\033[95m",
+    "turquoise": "\033[96m",
+}
+
 ASCII_ARTS = {
     "Arch": [
         "      /\\           ",
@@ -154,7 +171,7 @@ def get_gpu_name():
             gpu = "Erreur avec lspci"
     return gpu
 
-def get_system_info(show_percentage, include_disk, include_temp, export_file, distro=None):
+def get_system_info(show_percentage, include_disk, include_temp, export_file, distro=None, color="default"):
     os_name = distro if distro else get_os_name()
     kernel = platform.release()
     hostname = socket.gethostname()
@@ -209,13 +226,14 @@ def get_system_info(show_percentage, include_disk, include_temp, export_file, di
     ]
 
     ascii_art = get_ascii_art(os_name)
+    color_code = COLORS.get(color, COLORS["default"])
 
     print("")
     for i in range(len(ascii_art)):
         if i < len(info):
-            print(f"{ascii_art[i]}{info[i]}")
+            print(f"{color_code}{ascii_art[i]}{COLORS['default']}{info[i]}")
         else:
-            print(ascii_art[i])
+            print(f"{color_code}{ascii_art[i]}{COLORS['default']}")
     print("")
 
     if export_file:
@@ -241,8 +259,9 @@ def parse_args():
     parser.add_argument("--temp", action="store_true", help="Inclure la température des composants (si disponible).")
     parser.add_argument("--export", type=str, help="Exporter les informations dans un fichier JSON.")
     parser.add_argument("--distro", type=str, choices=list(ASCII_ARTS.keys()), help="Spécifier manuellement la distribution à afficher.")
+    parser.add_argument("--color", type=str, choices=list(COLORS.keys()), default="default", help="Choisir la couleur de l'ASCII art.")
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
-    get_system_info(args.pourcentage, args.disk, args.temp, args.export, args.distro)
+    get_system_info(args.pourcentage, args.disk, args.temp, args.export, args.distro, args.color)
