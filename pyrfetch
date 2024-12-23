@@ -74,7 +74,7 @@ ASCII_ARTS = {
         " |    |  /        ",
         " `----''          "
     ],
-    "Linux Mint": [
+    "Mint": [
         "   __________     ",
         "  |_    _   _|    ",
         "    |  | | |      ",
@@ -83,7 +83,7 @@ ASCII_ARTS = {
         "    |  |_| |      ",
         "    |______|      "
     ],
-    "Pop!_OS": [
+    "Pop": [
         "   ______        ",
         "  /      \\       ",
         " /   __   \\      ",
@@ -113,8 +113,8 @@ def get_os_name():
             elif "fedora" in content: return "Fedora"
             elif "kali" in content: return "Kali"
             elif "debian" in content: return "Debian"
-            elif "linuxmint" in content: return "Linux Mint"
-            elif "pop!_os" in content or "pop_os" in content: return "Pop!_OS"
+            elif "mint" in content: return "Mint"
+            elif "pop!_os" in content or "pop_os" in content: return "Pop"
             match = re.search(r'PRETTY_NAME="(.+)"', file.read())
             if match: return match.group(1)
     except FileNotFoundError:
