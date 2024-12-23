@@ -124,24 +124,22 @@ def get_os_name():
             elif "pop!_os" in content or "pop_os" in content:
                 return "Pop!_OS"
             
-            # Get the PRETTY_NAME if no specific match
             match = re.search(r'PRETTY_NAME="(.+)"', file.read())
             if match:
                 return match.group(1)
     except FileNotFoundError:
-        # Check for macOS
+        # MacOS 
         if platform.system() == "Darwin":
             return "macOS"
         
     return "Default"
 
 def get_ascii_art(os_name):
-    # Try to find exact match
     for key in ASCII_ARTS:
         if key.lower() in os_name.lower():
             return ASCII_ARTS[key]
     
-    # If no match found, return default
+    # Default
     return ASCII_ARTS["Default"]
 
 def format_uptime(seconds):
@@ -190,7 +188,6 @@ def get_system_info(show_percentage, include_disk, include_temp, export_file):
                     cpu_name = line.split(":")[1].strip()
                     break
     except FileNotFoundError:
-        # For macOS and other systems
         if platform.system() == "Darwin":
             try:
                 result = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], 
