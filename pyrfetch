@@ -124,16 +124,24 @@ def get_os_name():
     try:
         with open("/etc/os-release", "r") as file:
             content = file.read().lower()
-            if "arch" in content: return "Arch"
-            elif "gentoo" in content: return "Gentoo"
-            elif "ubuntu" in content: return "Ubuntu"
-            elif "fedora" in content: return "Fedora"
-            elif "kali" in content: return "Kali"
-            elif "debian" in content: return "Debian"
-            elif "mint" in content: return "Mint"
-            elif "pop!_os" in content or "pop_os" in content: return "Pop"
-            match = re.search(r'PRETTY_NAME="(.+)"', file.read())
-            if match: return match.group(1)
+            os_mapping = {
+                "arch": "Arch",
+                "gentoo": "Gentoo",
+                "ubuntu": "Ubuntu",
+                "fedora": "Fedora",
+                "kali": "Kali",
+                "debian": "Debian",
+                "mint": "Mint",
+                "pop!_os": "Pop",
+                "pop_os": "Pop",
+            }
+            for key, name in os_mapping.items():
+                if key in content:
+                    return name
+
+            match = re.search(r'pretty_name="(.+)"', content)
+            if match:
+                return match.group(1)
     except FileNotFoundError:
         if platform.system() == "Darwin": return "macOS"
     return "Default"
