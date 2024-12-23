@@ -231,7 +231,7 @@ def get_system_info(show_percentage, include_disk, include_temp, export_file, di
     print("")
     for i in range(len(ascii_art)):
         if i < len(info):
-            print(f"{color_code}{ascii_art[i]}{COLORS['default']}{info[i]}")
+            print(f"{color_code}{ascii_art[i]}{info[i]}{COLORS['default']}")
         else:
             print(f"{color_code}{ascii_art[i]}{COLORS['default']}")
     print("")
