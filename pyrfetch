@@ -262,12 +262,12 @@ def get_system_info(show_percentage, include_disk, include_temp, export_file, di
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Affiche des informations système avec ASCII art spécifique à l'OS.")
-    parser.add_argument("--pourcentage", action="store_true", help="Afficher l'utilisation de la RAM en pourcentage.")
-    parser.add_argument("--disk", action="store_true", help="Inclure les informations sur l'espace disque.")
-    parser.add_argument("--temp", action="store_true", help="Inclure la température des composants (si disponible).")
-    parser.add_argument("--export", type=str, help="Exporter les informations dans un fichier JSON.")
-    parser.add_argument("--distro", type=str, choices=list(ASCII_ARTS.keys()), help="Spécifier manuellement la distribution à afficher.")
-    parser.add_argument("--color", type=str, choices=list(COLORS.keys()), default="default", help="Choisir la couleur de l'ASCII art.")
+    parser.add_argument("--pourcentage", "-p",action="store_true", help="Afficher l'utilisation de la RAM en pourcentage.")
+    parser.add_argument("--disk", "-d", action="store_true", help="Inclure les informations sur l'espace disque.")
+    parser.add_argument("--temp", "-t", action="store_true", help="Inclure la température des composants (si disponible).")
+    parser.add_argument("--export", "-e", type=str, help="Exporter les informations dans un fichier JSON.")
+    parser.add_argument("--distro", "-di", type=str, choices=list(ASCII_ARTS.keys()), help="Spécifier manuellement la distribution à afficher.")
+    parser.add_argument("--color", "-c", type=str, choices=list(COLORS.keys()), default="default", help="Choisir la couleur de l'ASCII art.")
     return parser.parse_args()
 
 if __name__ == "__main__":
