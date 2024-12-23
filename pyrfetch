@@ -7,6 +7,7 @@ import subprocess
 import time
 import argparse
 import json
+import shutil
 
 ascii_art = [
     "      /\\           ",
@@ -18,20 +19,42 @@ ascii_art = [
     r"/_-''    ''-_\     "
 ]
 
-def getOsName(): # Get the OS name from /etc/os-release instead of platform.system()
+def getOsName():
     with open("/etc/os-release", "r") as file:
         for line in file:
             if "PRETTY_NAME" in line:
                 return line.split("=")[1].strip().replace('"', '')
-    return platform.system() # Fallback
+    return platform.system()
 
-
-def format_uptime(seconds): # Format uptime with a custom string
+def format_uptime(seconds):
     days, seconds = divmod(seconds, 86400)
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
     return f"{days}d {hours}h {minutes}m {seconds}s" if days else f"{hours}h {minutes}m {seconds}s"
 
+def get_gpu_name():
+    gpu = "N/A"
+    if shutil.which("nvidia-smi"):
+        try:
+            result = subprocess.run(
+                ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+                stdout=subprocess.PIPE, text=True, check=True
+            )
+            gpu = result.stdout.strip()
+        except subprocess.CalledProcessError:
+            gpu = "Erreur avec nvidia-smi"
+    else:
+        try:
+            result = subprocess.run(
+                ["lspci"], stdout=subprocess.PIPE, text=True, check=True
+            )
+            for line in result.stdout.splitlines():
+                if "VGA compatible controller" in line or "3D controller" in line:
+                    gpu = line.split(":")[2].strip()
+                    break
+        except subprocess.CalledProcessError:
+            gpu = "Erreur avec lspci"
+    return gpu
 
 def get_system_info(show_percentage, include_disk, include_temp, export_file):
     os_name = getOsName()
@@ -48,22 +71,10 @@ def get_system_info(show_percentage, include_disk, include_temp, export_file):
                 cpu_name = line.split(":")[1].strip()
                 break
 
-    try:
-        gpu = "N/A"
-        result = subprocess.run(["lspci"], stdout=subprocess.PIPE, text=True) # Use lspci instead of nvidia-smi for better compatibility with other GPUs
-        for line in result.stdout.splitlines():
-            if "VGA compatible controller" in line or "3D controller" in line:
-                gpu = line.split(":")[2].strip()
-                break
-        show_gpu = True
-    except subprocess.CalledProcessError:
-        show_gpu = False
+    gpu = get_gpu_name()
 
     ram = psutil.virtual_memory()
-    if show_percentage:
-        ram_info = f"{ram.percent}%"
-    else:
-        ram_info = f"{ram.used / (1024 ** 3):.2f}/{ram.total / (1024 ** 3):.2f} Go"
+    ram_info = f"{ram.percent}%" if show_percentage else f"{ram.used / (1024 ** 3):.2f}/{ram.total / (1024 ** 3):.2f} Go"
     
     disk_info = "N/A"
     if include_disk:
@@ -76,10 +87,8 @@ def get_system_info(show_percentage, include_disk, include_temp, export_file):
             temp = psutil.sensors_temperatures()
             if 'coretemp' in temp:
                 temperature = f"{temp['coretemp'][0].current}°C"
-            else:
-                temperature = "N/A"
         except AttributeError:
-            temperature = "Unsupported on this system."
+            pass
 
     info = [
         f"OS: {os_name}",
@@ -88,13 +97,11 @@ def get_system_info(show_percentage, include_disk, include_temp, export_file):
         f"Uptime: {uptime_str}",
         f"RAM: {ram_info}",
         f"CPU: {cpu_name}",
+        f"GPU: {gpu}",
         f"Disk: {disk_info if include_disk else 'N/A'}",
         f"Temp: {temperature}",
         "", ""
     ]
-    
-    if show_gpu:
-        info.insert(6, f"GPU: {gpu}")  # Only show GPU if it was found
 
     print("")
     for i in range(len(ascii_art)):
