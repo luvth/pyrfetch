@@ -107,39 +107,26 @@ def get_os_name():
     try:
         with open("/etc/os-release", "r") as file:
             content = file.read().lower()
-            if "arch" in content:
-                return "Arch"
-            elif "gentoo" in content:
-                return "Gentoo"
-            elif "ubuntu" in content:
-                return "Ubuntu"
-            elif "fedora" in content:
-                return "Fedora"
-            elif "kali" in content:
-                return "Kali"
-            elif "debian" in content:
-                return "Debian"
-            elif "linuxmint" in content:
-                return "Linux Mint"
-            elif "pop!_os" in content or "pop_os" in content:
-                return "Pop!_OS"
-            
+            if "arch" in content: return "Arch"
+            elif "gentoo" in content: return "Gentoo"
+            elif "ubuntu" in content: return "Ubuntu"
+            elif "fedora" in content: return "Fedora"
+            elif "kali" in content: return "Kali"
+            elif "debian" in content: return "Debian"
+            elif "linuxmint" in content: return "Linux Mint"
+            elif "pop!_os" in content or "pop_os" in content: return "Pop!_OS"
             match = re.search(r'PRETTY_NAME="(.+)"', file.read())
-            if match:
-                return match.group(1)
+            if match: return match.group(1)
     except FileNotFoundError:
-        # MacOS 
-        if platform.system() == "Darwin":
-            return "macOS"
-        
+        if platform.system() == "Darwin": return "macOS"
     return "Default"
 
 def get_ascii_art(os_name):
+    if os_name in ASCII_ARTS:
+        return ASCII_ARTS[os_name]
     for key in ASCII_ARTS:
         if key.lower() in os_name.lower():
             return ASCII_ARTS[key]
-    
-    # Default
     return ASCII_ARTS["Default"]
 
 def format_uptime(seconds):
@@ -152,18 +139,13 @@ def get_gpu_name():
     gpu = "N/A"
     if shutil.which("nvidia-smi"):
         try:
-            result = subprocess.run(
-                ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
-                stdout=subprocess.PIPE, text=True, check=True
-            )
+            result = subprocess.run(["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"], stdout=subprocess.PIPE, text=True, check=True)
             gpu = result.stdout.strip()
         except subprocess.CalledProcessError:
             gpu = "Erreur avec nvidia-smi"
     else:
         try:
-            result = subprocess.run(
-                ["lspci"], stdout=subprocess.PIPE, text=True, check=True
-            )
+            result = subprocess.run(["lspci"], stdout=subprocess.PIPE, text=True, check=True)
             for line in result.stdout.splitlines():
                 if "VGA compatible controller" in line or "3D controller" in line:
                     gpu = line.split(":")[2].strip()
@@ -172,8 +154,8 @@ def get_gpu_name():
             gpu = "Erreur avec lspci"
     return gpu
 
-def get_system_info(show_percentage, include_disk, include_temp, export_file):
-    os_name = get_os_name()
+def get_system_info(show_percentage, include_disk, include_temp, export_file, distro=None):
+    os_name = distro if distro else get_os_name()
     kernel = platform.release()
     hostname = socket.gethostname()
     boot_time = psutil.boot_time()
@@ -190,14 +172,12 @@ def get_system_info(show_percentage, include_disk, include_temp, export_file):
     except FileNotFoundError:
         if platform.system() == "Darwin":
             try:
-                result = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], 
-                                     capture_output=True, text=True, check=True)
+                result = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True, check=True)
                 cpu_name = result.stdout.strip()
             except subprocess.CalledProcessError:
                 pass
 
     gpu = get_gpu_name()
-
     ram = psutil.virtual_memory()
     ram_info = f"{ram.percent}%" if show_percentage else f"{ram.used / (1024 ** 3):.2f}/{ram.total / (1024 ** 3):.2f} Go"
     
@@ -260,8 +240,9 @@ def parse_args():
     parser.add_argument("--disk", action="store_true", help="Inclure les informations sur l'espace disque.")
     parser.add_argument("--temp", action="store_true", help="Inclure la température des composants (si disponible).")
     parser.add_argument("--export", type=str, help="Exporter les informations dans un fichier JSON.")
+    parser.add_argument("--distro", type=str, choices=list(ASCII_ARTS.keys()), help="Spécifier manuellement la distribution à afficher.")
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
-    get_system_info(args.pourcentage, args.disk, args.temp, args.export)
+    get_system_info(args.pourcentage, args.disk, args.temp, args.export, args.distro)
