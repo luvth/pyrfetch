@@ -268,6 +268,7 @@ def parse_args():
     parser.add_argument("--export", "-e", type=str, help="Exporter les informations dans un fichier JSON.")
     parser.add_argument("--distro", "-di", type=str, choices=list(ASCII_ARTS.keys()), help="Spécifier manuellement la distribution à afficher.")
     parser.add_argument("--color", "-c", type=str, choices=list(COLORS.keys()), default="default", help="Choisir la couleur de l'ASCII art.")
+    parser.add_argument("--version", "-v", action="version", version="pyrfetch 1.1")
     return parser.parse_args()
 
 if __name__ == "__main__":
