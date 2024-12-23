@@ -1,7 +1,6 @@
 # Pyrfetch
 
-![Pyrfetch Example](https://imgur.com/ySJD09a)  
-*(Replace this link with a screenshot of Pyrfetch displaying system information with ASCII art.)*
+![Pyrfetch Example][img]https://i.imgur.com/ySJD09a.png[/img]  
 
 ---
 
