@@ -45,3 +45,31 @@ chmod +x setup.sh
 ```
 pyrfetch --help
 ```
+---------------------------------
+
+### Problems ? : Here is some known issues :
+
+- Problems with psutil : u need to install psutil via pip3, pip , pipx
+  
+  ```
+  pip3 install psutil
+  ```
+  
+- Problems with python : U may need to install python or a newer version
+  
+  ```
+  sudo apt install python3
+  ```
+  ```
+  sudo pacman -S python3
+  ```
+  ```
+  sudo dnf install python3 or python
+  ```
+  If u are not using one of these distro , u can install it via snap or other package managers
+
+- Problems with others thing
+
+  U may need to update you'r system, or tell me if there is an unfixed probleme
+
+  
