@@ -18,6 +18,7 @@
 ## Prerequisites
 - Python 3.x
 - Internet connection (to fetch certain information)
+- Python3-psutil (if you dont have it, it will automaticaly install it, dont worry)
 
 ---
 
