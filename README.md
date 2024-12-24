@@ -40,3 +40,8 @@ chmod +x setup.sh
 ```bash
 ./setup.sh && cd && clear && pyrfetch
 ```
+
+### 4. See all the commands
+```
+pyrfetch --help
+```
