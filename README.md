@@ -49,13 +49,13 @@ pyrfetch --help
 
 ### Problems ? : Here is some known issues :
 
-- Problems with psutil : u need to install psutil via pip3, pip , pipx
+- Problems with psutil : You need to install psutil via pip3, pip , pipx
   
   ```
   pip3 install psutil
   ```
   
-- Problems with python : U may need to install python or a newer version
+- Problems with python : You may need to install python or a newer version
   
   ```
   sudo apt install python3
@@ -66,7 +66,7 @@ pyrfetch --help
   ```
   sudo dnf install python3 or python
   ```
-  If u are not using one of these distro , u can install it via snap or other package managers
+  If you are not using one of these distro , u can install it via snap or other package managers
 
 - Problems with others thing
 
