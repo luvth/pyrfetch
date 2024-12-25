@@ -53,6 +53,24 @@ COLORS = {
     "strike": "\033[9m"
 }
 
+DISTRO_COLORS = {
+    "Arch":      COLORS["bright_cyan"],
+    "Gentoo":    COLORS["dim"],
+    "Ubuntu":    COLORS["orange"],
+    "Fedora":    COLORS["cyan"],
+    "Kali":      COLORS["blue"],
+    "macOS":     COLORS["pink"],
+    "Debian":    COLORS["bright_red"],
+    "Mint":      COLORS["bright_green"],
+    "Pop":       COLORS["bright_blue"],
+    "Manjaro":   COLORS["green"],
+    "Endeavour": COLORS["purple"],
+    "OpenSUSE":  COLORS["lime"],
+    "RedHat":    COLORS["red"],
+    "Zorin":     COLORS["blue"],
+    "Default":   COLORS["default"]
+}
+
 ASCII_ARTS = {
     "Arch": [
         "      /\\           ",
@@ -77,8 +95,8 @@ ASCII_ARTS = {
         "   /  __ \\        ",
         "  |  /  \\ |       ",
         "  |  \\__/ |       ",
-        "   \\____/_        ",
-        "    ____          ",
+        "   \\_____/        ",
+        "                  ",
         "                  "
     ],
     "Fedora": [
@@ -134,8 +152,8 @@ ASCII_ARTS = {
     ],
     "Pop": [
         "   ______        ",
-        "  / _     \\       ",
-        " / |_|  █  \\      ",
+        "  / _     \\      ",
+        " / |_|  █  \\     ",
         "|  \\    █  |     ",
         "|   \\   ●  |     ",
         " \\   ===  /      ",
@@ -276,6 +294,12 @@ class SystemInfo:
             pass
         return "N/A"
 
+    def get_distro_color(self, color, os_name):
+        if(color == "default"):
+            return DISTRO_COLORS.get(os_name, DISTRO_COLORS["Default"])
+        return COLORS.get(color, COLORS["default"])
+    
+
     def format_uptime(self, seconds):
         days, remainder = divmod(seconds, 86400)
         hours, remainder = divmod(remainder, 3600)
@@ -310,27 +334,41 @@ class SystemInfo:
             except:
                 pass
 
+        infoLabel = [
+            f"OS: ",
+            f"Kernel: ",
+            f"Hostname: ",
+            f"Uptime: ",
+            f"RAM: ",
+            f"CPU: ",
+            f"GPU: ",
+            f"Disk: ",
+            f"Temp: ",
+            "",
+            ""
+        ]
         info = [
-            f"OS: {os_name}",
-            f"Kernel: {kernel}",
-            f"Hostname: {hostname}",
-            f"Uptime: {uptime}",
-            f"RAM: {ram_info}",
-            f"CPU: {cpu_name}",
-            f"GPU: {gpu}",
-            f"Disk: {disk_info}",
-            f"Temp: {temp}",
+            f"{os_name}",
+            f"{kernel}",
+            f"{hostname}",
+            f"{uptime}",
+            f"{ram_info}",
+            f"{cpu_name}",
+            f"{gpu}",
+            f"{disk_info}",
+            f"{temp}",
             "",
             ""
         ]
 
         ascii_art = ASCII_ARTS.get(os_name, ASCII_ARTS["Default"])
-        color_code = COLORS.get(color, COLORS["default"])
+        color_code = self.get_distro_color(color=color, os_name=os_name)
 
         print("")
         for i, art_line in enumerate(ascii_art):
             info_line = info[i] if i < len(info) else ""
-            print(f"{color_code}{art_line}{info_line}{COLORS['default']}")
+            info_label_line = infoLabel[i] if i < len(infoLabel) else ""
+            print(f"{color_code}{art_line}{info_label_line}{COLORS['default']}{info_line}")
         print("")
 
         if export_file:
