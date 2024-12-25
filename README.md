@@ -35,6 +35,8 @@ paru -S pyrfetch-git
 ```
 To install paru, see down below
 
+-----------
+
 ## Installation via github
 
 Follow these steps to clone the project, set execution permissions, and launch Pyrfetch:
@@ -83,7 +85,7 @@ pyrfetch --help
   If you are not using one of these distro , u can install it via snap or other package managers
 
 - Problems with the AUR
-  U my need to install yay or paru
+  You my need to install yay or paru
   ```
   sudo pacman -S yay
   ```
@@ -91,6 +93,8 @@ pyrfetch --help
   ```
   sudo pacman -S paru
   ```
+
+  You may need to make the build, see on archwiki
 
 
 - Problems with others thing
