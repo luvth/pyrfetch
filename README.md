@@ -22,7 +22,20 @@
 
 ---
 
-## Installation
+## Installation via the AUR 
+
+You need an arch based distro to acces the AUR
+You also need *yay* or *paru*
+
+```
+yay -S pyrfetch-git
+```
+```
+paru -S pyrfetch-git
+```
+To install paru, see down below
+
+## Installation via github
 
 Follow these steps to clone the project, set execution permissions, and launch Pyrfetch:
 
@@ -68,6 +81,17 @@ pyrfetch --help
   sudo dnf install python3 or python
   ```
   If you are not using one of these distro , u can install it via snap or other package managers
+
+- Problems with the AUR
+  U my need to install yay or paru
+  ```
+  sudo pacman -S yay
+  ```
+
+  ```
+  sudo pacman -S paru
+  ```
+
 
 - Problems with others thing
 
