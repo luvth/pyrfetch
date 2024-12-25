@@ -19,7 +19,9 @@ else
     fi
 fi
 
-sh ./install.sh
+# moved this into here
+chmod +x $(pwd)/pyrfetch
+sudo mv $(pwd)/pyrfetch /bin 
 
 # Scaryyy asf
 # sudo rm -rf ~/pyrfetch # This directory could in theory be with other files. i think it's better to use the command below:
