@@ -14,6 +14,7 @@ import logging
 from pathlib import Path
 from functools import lru_cache
 
+VERSION = "1.2"
 CONFIG_DIR = Path.home() / '.config' / 'pyrfetch'
 CACHE_DIR = CONFIG_DIR / 'cache' 
 LOG_FILE = CONFIG_DIR / 'sysinfo.log'
@@ -389,8 +390,14 @@ def main():
     parser.add_argument("--watch", action="store_true", help="Watch mode with live updates")
     parser.add_argument("--interval", type=int, default=2, help="Update interval for watch mode")
     parser.add_argument("--ascii", type=str, default="default", help="Path to a .txt containing ascii")
+    parser.add_argument("--version", default="default", help="Show version ")
     
     args = parser.parse_args()
+    
+    if args.version:
+        print(f"pyrfetch version {VERSION}")
+        return
+        
     sys_info = SystemInfo()
     try:
         while True:
