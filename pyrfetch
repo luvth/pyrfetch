@@ -14,7 +14,6 @@ import logging
 from pathlib import Path
 from functools import lru_cache
 
-VERSION = "1.2"
 CONFIG_DIR = Path.home() / '.config' / 'pyrfetch'
 CACHE_DIR = CONFIG_DIR / 'cache' 
 LOG_FILE = CONFIG_DIR / 'sysinfo.log'
@@ -52,21 +51,21 @@ COLORS = {
 }
 
 DISTRO_COLORS = {
-    "Arch":      COLORS["bright_cyan"],
-    "Gentoo":    COLORS["dim"],
-    "Ubuntu":    COLORS["orange"],
-    "Fedora":    COLORS["cyan"],
-    "Kali":      COLORS["blue"],
-    "macOS":     COLORS["pink"],
-    "Debian":    COLORS["bright_red"],
-    "Mint":      COLORS["bright_green"],
-    "Pop":       COLORS["bright_blue"],
-    "Manjaro":   COLORS["green"],
+    "Arch": COLORS["bright_cyan"],
+    "Gentoo": COLORS["dim"],
+    "Ubuntu": COLORS["orange"],
+    "Fedora": COLORS["cyan"],
+    "Kali": COLORS["blue"],
+    "macOS": COLORS["pink"],
+    "Debian": COLORS["bright_red"],
+    "Mint": COLORS["bright_green"],
+    "Pop": COLORS["bright_blue"],
+    "Manjaro": COLORS["green"],
     "Endeavour": COLORS["purple"],
-    "OpenSUSE":  COLORS["lime"],
-    "RedHat":    COLORS["red"],
-    "Zorin":     COLORS["blue"],
-    "Default":   COLORS["default"]
+    "OpenSUSE": COLORS["lime"],
+    "RedHat": COLORS["red"],
+    "Zorin": COLORS["blue"],
+    "Default": COLORS["default"]
 }
 
 ASCII_ARTS = {
@@ -213,7 +212,6 @@ ASCII_ARTS = {
     ]
 }
 
-
 class SystemInfo:
     def __init__(self):
         self._setup_once()
@@ -229,9 +227,11 @@ class SystemInfo:
     @lru_cache(maxsize=1)
     def get_os_name(self):
         try:
-            return platform.freedesktop_os_release().get("PRETTY_NAME", "Default").split()[0]
+            return platform.freedesktop_os_release().get("VERSION_ID", "Default")
         except Exception:
-            return "macOS" if platform.system() == "Darwin" else "Default"
+            if platform.system() == "Darwin":
+                return platform.mac_ver()[0]
+            return platform.version()
 
     def get_cpu_info(self):
         if hasattr(self, '_cpu_info'):
@@ -305,12 +305,12 @@ class SystemInfo:
 
     def get_system_info(self, show_percentage=False, include_disk=False, include_temp=False,
                        export_file=None, distro=None, color="default", ascii="default"):
-        os_name = distro if distro else self.get_os_name()
+        version = self.get_os_name()
         ram = psutil.virtual_memory()
         ram_info = f"{ram.percent}%" if show_percentage else f"{ram.used/(1024**3):.1f}GB/{ram.total/(1024**3):.1f}GB"
 
         info = [
-            os_name,
+            f"Version {version}",
             platform.release(),
             socket.gethostname(),
             self.format_uptime(int(time.time() - psutil.boot_time())),
@@ -323,7 +323,7 @@ class SystemInfo:
             ""
         ]
 
-        self._print_output(info, os_name, ascii, color)
+        self._print_output(info, distro or "Default", ascii, color)
         
         if export_file:
             self._export_info(info, export_file)
@@ -348,12 +348,10 @@ class SystemInfo:
         return f"{days}d {hours}h {minutes}m" if days else f"{hours}h {minutes}m {seconds}s"
 
     def _print_output(self, info, os_name, ascii, color):
-        ascii_art = (ASCII_ARTS.get(os_name, ASCII_ARTS["Default"]) 
-                    if ascii == "default" else self._read_ascii_file(ascii))
-        color_code = (DISTRO_COLORS.get(os_name, COLORS["default"]) 
-                     if color == "default" else COLORS.get(color, COLORS["default"]))
+        ascii_art = ASCII_ARTS.get(os_name, ASCII_ARTS["Default"]) if ascii == "default" else self._read_ascii_file(ascii)
+        color_code = DISTRO_COLORS.get(os_name, COLORS["default"]) if color == "default" else COLORS.get(color, COLORS["default"])
 
-        labels = ["OS: ", "Kernel: ", "Hostname: ", "Uptime: ", "RAM: ", 
+        labels = ["Version: ", "Kernel: ", "Hostname: ", "Uptime: ", "RAM: ", 
                  "CPU: ", "GPU: ", "Disk: ", "Temp: ", "", ""]
 
         print("")
@@ -373,7 +371,7 @@ class SystemInfo:
 
     def _export_info(self, info, export_file):
         export_data = dict(zip(
-            ["OS", "Kernel", "Hostname", "Uptime", "RAM", "CPU", "GPU", "Disk", "Temp"],
+            ["Version", "Kernel", "Hostname", "Uptime", "RAM", "CPU", "GPU", "Disk", "Temp"],
             info[:9]
         ))
         with open(export_file, 'w') as f:
@@ -384,6 +382,7 @@ def main():
     parser.add_argument("--percentage", action="store_true", help="Show RAM usage as percentage")
     parser.add_argument("--disk", action="store_true", help="Include disk information")
     parser.add_argument("--temp", action="store_true", help="Include temperature information")
+    parser.add_argument("--export", type=str, help="Export information to JSON file")
     parser.add_argument("--export", type=str, help="Export information to JSON file")
     parser.add_argument("--distro", type=str, choices=ASCII_ARTS.keys(), help="Manually specify distribution")
     parser.add_argument("--color", type=str, choices=COLORS.keys(), default="default", help="Choose ASCII art color")
