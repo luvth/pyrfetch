@@ -15,6 +15,7 @@ import datetime
 import logging
 from typing import Dict, List, Optional, Tuple, Union
 from pathlib import Path
+from functools import lru_cache
 
 # currently unused
 CONFIG_DIR = Path.home() / '.config' / 'pyrfetch'
@@ -168,7 +169,7 @@ ASCII_ARTS = {
         "████ ████ ████    ",  
         "████ ████ ████    "
     ],
-    "Endeavour": [
+    "EndeavourOS": [
         "                    ",
         "      //\\           ",
         "    / /  \\\\         ",
@@ -232,48 +233,76 @@ class SystemInfo:
             "opensuse": "OpenSUSE", "red hat": "RedHat", "zorin": "Zorin"
         }
         try:
-            with open("/etc/os-release", "r") as file:
-                content = file.read().lower()
-                for pattern, name in os_patterns.items():
-                    if pattern in content:
-                        return name
+            return platform.freedesktop_os_release().get("PRETTY_NAME", "Default").split()[0]
+
         except FileNotFoundError:
             if platform.system() == "Darwin":
                 return "macOS"
         return "Default"
 
+    @lru_cache(maxsize=1)
     def get_cpu_info(self):
         if platform.system() == "Darwin":
             try:
-                return subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
-                                   capture_output=True, text=True, check=True).stdout.strip()
-            except:
+                result = subprocess.run(
+                    ["sysctl", "-n", "machdep.cpu.brand_string"],
+                    capture_output=True,
+                    text=True,
+                    timeout=1  # Add timeout
+                )
+                if result.returncode == 0:
+                    return result.stdout.strip()
+            except (subprocess.SubprocessError, subprocess.TimeoutExpired):
                 pass
+
         try:
             with open("/proc/cpuinfo", "r") as f:
                 for line in f:
-                    if "model name" in line:
-                        return line.split(":")[1].strip()
-        except:
-            pass 
-        return "Unknown"
+                    if line.startswith("model name"):
+                        return line.split(":", 1)[1].strip()
+                return "Unknown CPU"
+                    
+        except (IOError, OSError):
+            return "Unknown CPU"
 
-    def get_gpu_info(self):
+        return "Unknown CPU"
+
+    @lru_cache(maxsize=1)
+    def get_gpu_info(self) -> str:
         if shutil.which("nvidia-smi"):
             try:
-                result = subprocess.run(["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
-                                     stdout=subprocess.PIPE, text=True, check=True)
-                return result.stdout.strip()
-            except:
+                result = subprocess.run(
+                    ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+                    stdout=subprocess.PIPE,
+                    text=True,
+                    check=True,
+                    timeout=2
+                )
+                if result.stdout.strip():
+                    return result.stdout.strip()
+            except (subprocess.SubprocessError, subprocess.TimeoutExpired):
                 pass
         try:
-            result = subprocess.run(["lspci"], stdout=subprocess.PIPE, text=True, check=True)
+            result = subprocess.run(
+                ["lspci"],
+                stdout=subprocess.PIPE,
+                text=True,
+                check=True,
+                timeout=2
+            )
+            
+            gpu_identifiers = ["VGA compatible controller", "3D controller"]
+            
             for line in result.stdout.splitlines():
-                if any(x in line for x in ["VGA compatible controller", "3D controller"]):
-                    return line.split(":")[2].strip()
-        except:
-            pass
-        return "N/A"
+                if any(identifier in line for identifier in gpu_identifiers):
+                    parts = line.split(":", 2)  # Split max 2 times
+                    if len(parts) >= 3:
+                        return parts[2].strip()
+                    
+            return "Integrated Graphics"
+            
+        except (subprocess.SubprocessError, subprocess.TimeoutExpired):
+            return "N/A"
 
     def get_network_info(self):
         interfaces = {}
