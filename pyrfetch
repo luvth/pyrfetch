@@ -366,7 +366,7 @@ class SystemInfo:
                     final_info.append(value)
                 
         for i in range(9):
-            final_info.append("\n")
+            final_info.append("")
 
 
         return final_info
@@ -397,6 +397,9 @@ class SystemInfo:
             for value in label:
                 if value == line and json_data[value]:
                     final_label.append(value + ": ")
+
+        for i in range(9):
+            final_label.append("")
 
         return final_label
 
@@ -457,8 +460,13 @@ class SystemInfo:
     # Read the custom ascii, if there is one
     def _read_ascii_file(self, ascii_path):
         try:
-            with open(ascii_path) as f:
-                return [line.rstrip() for line in f]
+            file = open(ascii_path, "r")
+            lines = file.readlines()
+            final_lines = []
+            for line in lines:
+                line = line.replace("\n", "")
+                final_lines.append(line)
+            return final_lines
         except Exception as e:
             self.logger.error(f"ASCII file error: {e}")
             return ASCII_ARTS["Default"]
