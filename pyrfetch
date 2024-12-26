@@ -8,19 +8,14 @@ import time
 import argparse
 import json
 import shutil
-import re
 import os
 import sys
-import datetime
 import logging
-from typing import Dict, List, Optional, Tuple, Union
 from pathlib import Path
 from functools import lru_cache
 
-# currently unused
 CONFIG_DIR = Path.home() / '.config' / 'pyrfetch'
-CONFIG_FILE = CONFIG_DIR / 'config.json'
-CACHE_DIR = CONFIG_DIR / 'cache'
+CACHE_DIR = CONFIG_DIR / 'cache' 
 LOG_FILE = CONFIG_DIR / 'sysinfo.log'
 
 COLORS = {
@@ -217,103 +212,86 @@ ASCII_ARTS = {
     ]
 }
 
+
 class SystemInfo:
     def __init__(self):
+        self._setup_once()
+        
+    @lru_cache(maxsize=1)
+    def _setup_once(self):
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         logging.basicConfig(filename=LOG_FILE, level=logging.INFO,
                           format='%(asctime)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger('SystemInfo')
-
+        
+    @lru_cache(maxsize=1)
     def get_os_name(self):
-        os_patterns = {
-            "arch": "Arch", "gentoo": "Gentoo", "ubuntu": "Ubuntu", "fedora": "Fedora",
-            "kali": "Kali", "debian": "Debian", "linuxmint": "Mint", "pop!_os": "Pop",
-            "pop_os": "Pop", "manjaro": "Manjaro", "endeavour": "Endeavour",
-            "opensuse": "OpenSUSE", "red hat": "RedHat", "zorin": "Zorin"
-        }
         try:
             return platform.freedesktop_os_release().get("PRETTY_NAME", "Default").split()[0]
-
         except Exception:
-            if platform.system() == "Darwin":
-                return "macOS"
-        return "Default"
+            return "macOS" if platform.system() == "Darwin" else "Default"
 
-    @lru_cache(maxsize=1)
     def get_cpu_info(self):
+        if hasattr(self, '_cpu_info'):
+            return self._cpu_info
+            
         if platform.system() == "Darwin":
             try:
-                result = subprocess.run(
-                    ["sysctl", "-n", "machdep.cpu.brand_string"],
-                    capture_output=True,
-                    text=True,
-                    timeout=1  # Add timeout
-                )
+                result = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
+                                     capture_output=True, text=True, timeout=1)
                 if result.returncode == 0:
-                    return result.stdout.strip()
-            except (subprocess.SubprocessError, subprocess.TimeoutExpired):
+                    self._cpu_info = result.stdout.strip()
+                    return self._cpu_info
+            except:
                 pass
 
         try:
             with open("/proc/cpuinfo", "r") as f:
                 for line in f:
-                    if line.startswith("model name"):
-                        return line.split(":", 1)[1].strip()
-                return "Unknown CPU"
-                    
-        except (IOError, OSError):
-            return "Unknown CPU"
-
-        return "Unknown CPU"
+                    if "model name" in line:
+                        self._cpu_info = line.split(":", 1)[1].strip()
+                        return self._cpu_info
+        except:
+            pass
+            
+        self._cpu_info = "Unknown CPU"
+        return self._cpu_info
 
     @lru_cache(maxsize=1)
-    def get_gpu_info(self) -> str:
+    def get_gpu_info(self):
         if shutil.which("nvidia-smi"):
             try:
-                result = subprocess.run(
-                    ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
-                    stdout=subprocess.PIPE,
-                    text=True,
-                    check=True,
-                    timeout=2
-                )
+                result = subprocess.run(["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+                                     stdout=subprocess.PIPE, text=True, check=True, timeout=1)
                 if result.stdout.strip():
                     return result.stdout.strip()
-            except (subprocess.SubprocessError, subprocess.TimeoutExpired):
+            except:
                 pass
+
         try:
-            result = subprocess.run(
-                ["lspci"],
-                stdout=subprocess.PIPE,
-                text=True,
-                check=True,
-                timeout=2
-            )
-            
-            gpu_identifiers = ["VGA compatible controller", "3D controller"]
-            
+            result = subprocess.run(["lspci"], stdout=subprocess.PIPE, text=True, check=True, timeout=1)
             for line in result.stdout.splitlines():
-                if any(identifier in line for identifier in gpu_identifiers):
-                    parts = line.split(":", 2)  # Split max 2 times
-                    if len(parts) >= 3:
-                        return parts[2].strip()
-                    
-            return "Integrated Graphics"
+                if "VGA" in line or "3D controller" in line:
+                    return line.split(":", 2)[2].strip()
+        except:
+            pass
             
-        except (subprocess.SubprocessError, subprocess.TimeoutExpired):
-            return "N/A"
+        return "Integrated Graphics"
 
     def get_network_info(self):
-        interfaces = {}
+        if hasattr(self, '_network_info'):
+            return self._network_info
+            
+        self._network_info = {}
         try:
             for iface, addrs in psutil.net_if_addrs().items():
                 for addr in addrs:
                     if addr.family == socket.AF_INET:
-                        interfaces[iface] = addr.address
+                        self._network_info[iface] = addr.address
         except Exception as e:
             self.logger.error(f"Network error: {e}")
-        return interfaces
+        return self._network_info
 
     def get_battery_info(self):
         try:
@@ -324,106 +302,81 @@ class SystemInfo:
             pass
         return "N/A"
 
-    def get_distro_color(self, color, os_name):
-        if (color == "default"):
-            return DISTRO_COLORS.get(os_name, DISTRO_COLORS["Default"])
-        return COLORS.get(color, COLORS["default"])
-    
-    def get_ascii_art(self, ascii, os_name):
-        if (ascii == "default"):
-            return ASCII_ARTS.get(os_name, ASCII_ARTS["Default"])
-        else:
-            try:
-                ascii_file = open(ascii, "r")
-                ascii_lines = ascii_file.readlines()
-                final_ascii_lines = []
-                for ascii_line in ascii_lines:
-                    ascii_line = ascii_line.replace("\n", "")
-                    final_ascii_lines.append(ascii_line)
-                return final_ascii_lines
-                
-            except Exception as e:
-                self.logger.error(f"File Read Error: {e}")
+    def get_system_info(self, show_percentage=False, include_disk=False, include_temp=False,
+                       export_file=None, distro=None, color="default", ascii="default"):
+        os_name = distro if distro else self.get_os_name()
+        ram = psutil.virtual_memory()
+        ram_info = f"{ram.percent}%" if show_percentage else f"{ram.used/(1024**3):.1f}GB/{ram.total/(1024**3):.1f}GB"
+
+        info = [
+            os_name,
+            platform.release(),
+            socket.gethostname(),
+            self.format_uptime(int(time.time() - psutil.boot_time())),
+            ram_info,
+            self.get_cpu_info(),
+            self.get_gpu_info(),
+            self._get_disk_info() if include_disk else "N/A",
+            self._get_temp_info() if include_temp else "N/A",
+            "",
+            ""
+        ]
+
+        self._print_output(info, os_name, ascii, color)
+        
+        if export_file:
+            self._export_info(info, export_file)
+
+    def _get_disk_info(self):
+        disk = psutil.disk_usage('/')
+        return f"{disk.used/(1024**3):.1f}/{disk.total/(1024**3):.1f}GB ({disk.percent}%)"
+
+    def _get_temp_info(self):
+        try:
+            sensors = psutil.sensors_temperatures()
+            if 'coretemp' in sensors:
+                return f"{sensors['coretemp'][0].current}°C"
+        except:
+            pass
+        return "N/A"
 
     def format_uptime(self, seconds):
         days, remainder = divmod(seconds, 86400)
         hours, remainder = divmod(remainder, 3600)
         minutes, seconds = divmod(remainder, 60)
-        if days:
-            return f"{days}d {hours}h {minutes}m"
-        return f"{hours}h {minutes}m {seconds}s"
+        return f"{days}d {hours}h {minutes}m" if days else f"{hours}h {minutes}m {seconds}s"
 
-    def get_system_info(self, show_percentage=False, include_disk=False, include_temp=False,
-                       export_file=None, distro=None, color="default", ascii="default"):
-        os_name = distro if distro else self.get_os_name()
-        kernel = platform.release()
-        hostname = socket.gethostname()
-        uptime = self.format_uptime(int(time.time() - psutil.boot_time()))
-        cpu_name = self.get_cpu_info()
-        gpu = self.get_gpu_info()
-        
-        ram = psutil.virtual_memory()
-        ram_info = f"{ram.percent}%" if show_percentage else f"{ram.used/(1024**3):.1f}GB/{ram.total/(1024**3):.1f}GB"
-        
-        disk_info = "N/A"
-        if include_disk:
-            disk = psutil.disk_usage('/')
-            disk_info = f"{disk.used/(1024**3):.1f}/{disk.total/(1024**3):.1f}GB ({disk.percent}%)"
+    def _print_output(self, info, os_name, ascii, color):
+        ascii_art = (ASCII_ARTS.get(os_name, ASCII_ARTS["Default"]) 
+                    if ascii == "default" else self._read_ascii_file(ascii))
+        color_code = (DISTRO_COLORS.get(os_name, COLORS["default"]) 
+                     if color == "default" else COLORS.get(color, COLORS["default"]))
 
-        temp = "N/A"
-        if include_temp:
-            try:
-                sensors = psutil.sensors_temperatures()
-                if 'coretemp' in sensors:
-                    temp = f"{sensors['coretemp'][0].current}°C"
-            except:
-                pass
-
-        infoLabel = [
-            f"OS: ",
-            f"Kernel: ",
-            f"Hostname: ",
-            f"Uptime: ",
-            f"RAM: ",
-            f"CPU: ",
-            f"GPU: ",
-            f"Disk: ",
-            f"Temp: ",
-            "",
-            ""
-        ]
-        info = [
-            f"{os_name}",
-            f"{kernel}",
-            f"{hostname}",
-            f"{uptime}",
-            f"{ram_info}",
-            f"{cpu_name}",
-            f"{gpu}",
-            f"{disk_info}",
-            f"{temp}",
-            "",
-            ""
-        ]
-
-        ascii_art = self.get_ascii_art(ascii=ascii, os_name=os_name)
-        #ascii_art = ASCII_ARTS.get(os_name, ASCII_ARTS["Default"])
-        color_code = self.get_distro_color(color=color, os_name=os_name)
+        labels = ["OS: ", "Kernel: ", "Hostname: ", "Uptime: ", "RAM: ", 
+                 "CPU: ", "GPU: ", "Disk: ", "Temp: ", "", ""]
 
         print("")
         for i, art_line in enumerate(ascii_art):
             info_line = info[i] if i < len(info) else ""
-            info_label_line = infoLabel[i] if i < len(infoLabel) else ""
-            print(f"{color_code}{art_line}{info_label_line}{COLORS['default']}{info_line}")
+            label = labels[i] if i < len(labels) else ""
+            print(f"{color_code}{art_line}{label}{COLORS['default']}{info_line}")
         print("")
 
-        if export_file:
-            export_data = {k: v.split(": ")[1] for k, v in zip(
-                ["OS", "Kernel", "Hostname", "Uptime", "RAM", "CPU", "GPU", "Disk", "Temp"],
-                info[:9]
-            )}
-            with open(export_file, 'w') as f:
-                json.dump(export_data, f, indent=2)
+    def _read_ascii_file(self, ascii_path):
+        try:
+            with open(ascii_path) as f:
+                return [line.rstrip() for line in f]
+        except Exception as e:
+            self.logger.error(f"ASCII file error: {e}")
+            return ASCII_ARTS["Default"]
+
+    def _export_info(self, info, export_file):
+        export_data = dict(zip(
+            ["OS", "Kernel", "Hostname", "Uptime", "RAM", "CPU", "GPU", "Disk", "Temp"],
+            info[:9]
+        ))
+        with open(export_file, 'w') as f:
+            json.dump(export_data, f, indent=2)
 
 def main():
     parser = argparse.ArgumentParser(description="Display system information with ASCII art")
@@ -436,10 +389,9 @@ def main():
     parser.add_argument("--watch", action="store_true", help="Watch mode with live updates")
     parser.add_argument("--interval", type=int, default=2, help="Update interval for watch mode")
     parser.add_argument("--ascii", type=str, default="default", help="Path to a .txt containing ascii")
-
+    
     args = parser.parse_args()
     sys_info = SystemInfo()
-
     try:
         while True:
             sys_info.get_system_info(
