@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# TODO: add a reset config arg
+
 import platform
 import socket
 import psutil
@@ -14,8 +16,9 @@ import logging
 from pathlib import Path
 from functools import lru_cache
 
-VERSION = "1.2"
+VERSION = "1.3"
 CONFIG_DIR = Path.home() / '.config' / 'pyrfetch'
+CONFIG_FILE = Path(CONFIG_DIR / 'config.json')
 CACHE_DIR = CONFIG_DIR / 'cache' 
 LOG_FILE = CONFIG_DIR / 'sysinfo.log'
 
@@ -213,6 +216,19 @@ ASCII_ARTS = {
     ]
 }
 
+DEFAULT_CONFIG = {
+    "OS":       True,
+    "Kernel":   True,
+    "Hostname": True,
+    "Uptime":   True,
+    "RAM":      True,
+    "CPU":      True,
+    "GPU":      True,
+    "Version":  True,
+    "Disk":     True,
+    "Temp":     True
+}
+
 class SystemInfo:
     def __init__(self):
         self._setup_once()
@@ -221,6 +237,9 @@ class SystemInfo:
     def _setup_once(self):
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        if not CONFIG_FILE.exists():
+            with open(CONFIG_FILE, 'w') as file:
+                json.dump(DEFAULT_CONFIG, indent=4, fp=file)
         logging.basicConfig(filename=LOG_FILE, level=logging.INFO,
                           format='%(asctime)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger('SystemInfo')
@@ -302,25 +321,75 @@ class SystemInfo:
             pass
         return "N/A"
 
-    def get_system_info(self, show_percentage=False, include_disk=False, include_temp=False,
-                       export_file=None, distro=None, color="default", ascii="default"):
+    def _get_info(self, distro, show_percentage, include_disk, include_temp):
         os_name = distro if distro else self.get_os_name()
         ram = psutil.virtual_memory()
         ram_info = f"{ram.percent}%" if show_percentage else f"{ram.used/(1024**3):.1f}GB/{ram.total/(1024**3):.1f}GB"
+        info = {
+            "OS": os_name,
+            "Kernel": platform.release(),
+            "Hostname": socket.gethostname(),
+            "Uptime": self.format_uptime(int(time.time() - psutil.boot_time())),
+            "RAM": ram_info,
+            "CPU": self.get_cpu_info(),
+            "GPU": self.get_gpu_info(),
+            "Version": f"{VERSION}",
+            "Disk": self._get_disk_info() if include_disk else "N/A",
+            "Temp": self._get_temp_info() if include_temp else "N/A"
+        }
 
-        info = [
-            os_name,
-            platform.release(),
-            socket.gethostname(),
-            self.format_uptime(int(time.time() - psutil.boot_time())),
-            ram_info,
-            self.get_cpu_info(),
-            self.get_gpu_info(),
-            self._get_disk_info() if include_disk else "N/A",
-            self._get_temp_info() if include_temp else "N/A",
-            "",
-            ""
+        final_info = []
+
+        # i love going insane trying to figure out how to do this without tons of if`s
+
+        with open(CONFIG_FILE, 'r') as file:
+            json_data = json.load(file)
+
+        for line in json_data:
+            for key, value in info.items():
+                if key == line and json_data[key]:
+                    final_info.append(value)
+                
+        for i in range(9):
+            final_info.append("\n")
+
+
+        return final_info
+        
+    def _get_labels(self):
+        label = [
+            "OS",
+            "Kernel",
+            "Hostname",
+            "Uptime",
+            "RAM",
+            "CPU",
+            "GPU",
+            "Version",
+            "Disk",
+            "Temp"
         ]
+
+        final_label = []
+
+        # i love going insane trying to figure out how to do this without tons of if`s
+
+        with open(CONFIG_FILE, 'r') as file:
+            json_data = json.load(file)
+
+        for line in json_data:
+            for value in label:
+                if value == line and json_data[value]:
+                    final_label.append(value + ": ")
+
+        return final_label
+
+    def get_system_info(self, show_percentage=False, include_disk=False, include_temp=False,
+                       export_file=None, distro=None, color="default", ascii="default"):
+        os_name = distro if distro else self.get_os_name()
+
+        # screams of a thousand programmers
+        info = self._get_info(distro=distro, show_percentage=show_percentage, include_disk=include_disk, include_temp=include_temp)
 
         self._print_output(info, os_name, ascii, color)
         
@@ -352,14 +421,15 @@ class SystemInfo:
         color_code = (DISTRO_COLORS.get(os_name, COLORS["default"]) 
                      if color == "default" else COLORS.get(color, COLORS["default"]))
 
-        labels = ["OS: ", "Kernel: ", "Hostname: ", "Uptime: ", "RAM: ", 
-                 "CPU: ", "GPU: ", "Disk: ", "Temp: ", "", ""]
-
+        labels = self._get_labels()
         print("")
         for i, art_line in enumerate(ascii_art):
             info_line = info[i] if i < len(info) else ""
             label = labels[i] if i < len(labels) else ""
-            print(f"{color_code}{art_line}{label}{COLORS['default']}{info_line}")
+            if(not info_line or info_line == "N/A"):
+                print(f"{color_code}{art_line}{COLORS['default']}")
+            else:
+                print(f"{color_code}{art_line}{label}{COLORS['default']}{info_line}")
         print("")
 
     def _read_ascii_file(self, ascii_path):
@@ -393,6 +463,7 @@ def main():
     
     args = parser.parse_args()
 
+    # coolpuppykid says: what happend here?
     # Fucking took me 1 hour and 6 bug just for this shit, if u see this, im pissed
     if args.version:
         print(f"pyrfetch version {VERSION}")

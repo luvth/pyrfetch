@@ -58,9 +58,21 @@ chmod +x setup.sh
 ```
 
 ### 4. See all the commands
-```
+```bash
 pyrfetch --help
 ```
+
+### Configuration.
+Pyrfetch stores a config file at
+
+```bash
+~/.config/pyrfetch/config.json
+```
+
+To change what gets displayed
+
+Just edit the config and change a true to false
+
 ---------------------------------
 
 ### Problems ? : Here is some known issues :
