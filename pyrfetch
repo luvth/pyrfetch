@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# TODO: add a reset config arg
 # TODO: Fire coolpuppy, maybe
+# TODO: Fire me, im a shit coder - Luvth
 
 import platform
 import socket
@@ -16,13 +16,14 @@ import sys
 import logging
 from pathlib import Path
 from functools import lru_cache
+from typing import Dict, List, Optional
 
-# Version of the project, update if ur comits is more then 75 lines
-VERSION = "1.3"
+# Version of the project, update if ur comits is more then 75 lines or really useful, like added a full feature
+VERSION = "1.4.0"
 
 CONFIG_DIR = Path.home() / '.config' / 'pyrfetch'
 CONFIG_FILE = Path(CONFIG_DIR / 'config.json')
-CACHE_DIR = CONFIG_DIR / 'cache' 
+CACHE_DIR = CONFIG_DIR / 'cache'
 LOG_FILE = CONFIG_DIR / 'sysinfo.log'
 
 # All colors 
@@ -48,6 +49,7 @@ COLORS = {
     "bright_blue": "\033[94m",
     "bright_magenta": "\033[95m",
     "bright_cyan": "\033[96m",
+    #Not colors, but , can be useful
     "bold": "\033[1m",
     "dim": "\033[2m",
     "italic": "\033[3m",
@@ -74,7 +76,7 @@ DISTRO_COLORS = {
     "OpenSUSE": COLORS["lime"],
     "RedHat": COLORS["red"],
     "Zorin": COLORS["blue"],
-    "Default": COLORS["default"]
+    "Default": COLORS["red"]
 }
 
 # List of beautiful (not stolen (maybe)) ascii art
@@ -406,7 +408,7 @@ class SystemInfo:
         os_name = distro if distro else self.get_os_name()
 
         # screams of a thousand programmers
-        # real
+        # including me, luvth
         info = self._get_info(distro=distro, show_percentage=show_percentage, include_disk=include_disk, include_temp=include_temp)
 
         self._print_output(info, os_name, ascii, color)
@@ -472,7 +474,7 @@ class SystemInfo:
         with open(export_file, 'w') as f:
             json.dump(export_data, f, indent=2)
 
-# All the args, dont use watch, its fucking useless
+# All the args, dont use watch, its fucking useless (i removed it xD)
 def main():
     parser = argparse.ArgumentParser(description="Display system information with ASCII art")
     parser.add_argument("--version", action="store_true", help="Show the version of the script")
@@ -482,37 +484,26 @@ def main():
     parser.add_argument("--export", type=str, help="Export information to JSON file")
     parser.add_argument("--distro", type=str, choices=ASCII_ARTS.keys(), help="Manually specify distribution")
     parser.add_argument("--color", type=str, choices=COLORS.keys(), default="default", help="Choose ASCII art color")
-    parser.add_argument("--watch", action="store_true", help="Watch mode with live updates")
-    parser.add_argument("--interval", type=int, default=2, help="Update interval for watch mode")
     parser.add_argument("--ascii", type=str, default="default", help="Path to a .txt containing ascii")
     
     args = parser.parse_args()
 
-    # coolpuppykid says: what happend here?
-    # luvth says : i replaced print pyrfetch version without args.version, so the output was always just the version without the fetch
-    # Fucking took me 1 hour and 6 bug just for this shit, if u see this, im pissed
     if args.version:
         print(f"pyrfetch version {VERSION}")
         sys.exit(0)
 
     sys_info = SystemInfo()
     try:
-        while True:
-            sys_info.get_system_info(
-                args.percentage, args.disk, args.temp,
-                args.export, args.distro, args.color, args.ascii
-            )
-            if not args.watch:
-                break
-            time.sleep(args.interval)
-            os.system("clear")
+        sys_info.get_system_info(
+            args.percentage, args.disk, args.temp,
+            args.export, args.distro, args.color, args.ascii
+        )
     except KeyboardInterrupt:
         print("\nExiting...")
     except Exception as e:
         logging.error(f"Error: {e}")
         print(f"An error occurred: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
