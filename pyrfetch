@@ -393,7 +393,7 @@ def main():
     
     args = parser.parse_args()
 
-    # Fucking too me 1 hour and 6 bug just for this shit, if u see this, im pissed
+    # Fucking took me 1 hour and 6 bug just for this shit, if u see this, im pissed
     if args.version:
         print(f"pyrfetch version {VERSION}")
         sys.exit(0)
