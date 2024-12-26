@@ -16,7 +16,8 @@ import logging
 from typing import Dict, List, Optional, Tuple, Union
 from pathlib import Path
 
-CONFIG_DIR = Path.home() / '.config' / 'sysinfo'
+# currently unused
+CONFIG_DIR = Path.home() / '.config' / 'pyrfetch'
 CONFIG_FILE = CONFIG_DIR / 'config.json'
 CACHE_DIR = CONFIG_DIR / 'cache'
 LOG_FILE = CONFIG_DIR / 'sysinfo.log'
@@ -151,13 +152,13 @@ ASCII_ARTS = {
         "\\_________________|  "
     ],
     "Pop": [
-        "   ______        ",
-        "  / _     \\      ",
-        " / |_|  █  \\     ",
-        "|  \\    █  |     ",
-        "|   \\   ●  |     ",
-        " \\   ===  /      ",
-        "  \\______/       "
+        "                  ",
+        "  ▄█████▄▄ ██     ",
+        "  ██    ██ ██     ",
+        "  ██    ██ ██     ",
+        "  ██████▀▀ ██     ",
+        "  ██              ",
+        "  ██       ██     "
     ],
     "Manjaro": [
         "█████████ ████    ",   
@@ -295,10 +296,25 @@ class SystemInfo:
         return "N/A"
 
     def get_distro_color(self, color, os_name):
-        if(color == "default"):
+        if (color == "default"):
             return DISTRO_COLORS.get(os_name, DISTRO_COLORS["Default"])
         return COLORS.get(color, COLORS["default"])
     
+    def get_ascii_art(self, ascii, os_name):
+        if (ascii == "default"):
+            return ASCII_ARTS.get(os_name, ASCII_ARTS["Default"])
+        else:
+            try:
+                ascii_file = open(ascii, "r")
+                ascii_lines = ascii_file.readlines()
+                final_ascii_lines = []
+                for ascii_line in ascii_lines:
+                    ascii_line = ascii_line.replace("\n", "")
+                    final_ascii_lines.append(ascii_line)
+                return final_ascii_lines
+                
+            except Exception as e:
+                self.logger.error(f"File Read Error: {e}")
 
     def format_uptime(self, seconds):
         days, remainder = divmod(seconds, 86400)
@@ -309,7 +325,7 @@ class SystemInfo:
         return f"{hours}h {minutes}m {seconds}s"
 
     def get_system_info(self, show_percentage=False, include_disk=False, include_temp=False,
-                       export_file=None, distro=None, color="default"):
+                       export_file=None, distro=None, color="default", ascii="default"):
         os_name = distro if distro else self.get_os_name()
         kernel = platform.release()
         hostname = socket.gethostname()
@@ -361,7 +377,8 @@ class SystemInfo:
             ""
         ]
 
-        ascii_art = ASCII_ARTS.get(os_name, ASCII_ARTS["Default"])
+        ascii_art = self.get_ascii_art(ascii=ascii, os_name=os_name)
+        #ascii_art = ASCII_ARTS.get(os_name, ASCII_ARTS["Default"])
         color_code = self.get_distro_color(color=color, os_name=os_name)
 
         print("")
@@ -381,7 +398,7 @@ class SystemInfo:
 
 def main():
     parser = argparse.ArgumentParser(description="Display system information with ASCII art")
-    parser.add_argument("--pourcentage", action="store_true", help="Show RAM usage as percentage")
+    parser.add_argument("--percentage", action="store_true", help="Show RAM usage as percentage")
     parser.add_argument("--disk", action="store_true", help="Include disk information")
     parser.add_argument("--temp", action="store_true", help="Include temperature information")
     parser.add_argument("--export", type=str, help="Export information to JSON file")
@@ -389,6 +406,7 @@ def main():
     parser.add_argument("--color", type=str, choices=COLORS.keys(), default="default", help="Choose ASCII art color")
     parser.add_argument("--watch", action="store_true", help="Watch mode with live updates")
     parser.add_argument("--interval", type=int, default=2, help="Update interval for watch mode")
+    parser.add_argument("--ascii", type=str, default="default", help="Path to a .txt containing ascii")
 
     args = parser.parse_args()
     sys_info = SystemInfo()
@@ -396,8 +414,8 @@ def main():
     try:
         while True:
             sys_info.get_system_info(
-                args.pourcentage, args.disk, args.temp,
-                args.export, args.distro, args.color
+                args.percentage, args.disk, args.temp,
+                args.export, args.distro, args.color, args.ascii
             )
             if not args.watch:
                 break
