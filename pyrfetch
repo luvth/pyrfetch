@@ -380,6 +380,7 @@ class SystemInfo:
 
 def main():
     parser = argparse.ArgumentParser(description="Display system information with ASCII art")
+    parser.add_argument("--version", action="store_true", help="Show the version of the script")
     parser.add_argument("--percentage", action="store_true", help="Show RAM usage as percentage")
     parser.add_argument("--disk", action="store_true", help="Include disk information")
     parser.add_argument("--temp", action="store_true", help="Include temperature information")
@@ -391,6 +392,12 @@ def main():
     parser.add_argument("--ascii", type=str, default="default", help="Path to a .txt containing ascii")
     
     args = parser.parse_args()
+
+    # Fucking too me 1 hour and 6 bug just for this shit, if u see this, im pissed
+    if args.version:
+        print(f"pyrfetch version {VERSION}")
+        sys.exit(0)
+
     sys_info = SystemInfo()
     try:
         while True:
@@ -408,6 +415,7 @@ def main():
         logging.error(f"Error: {e}")
         print(f"An error occurred: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
