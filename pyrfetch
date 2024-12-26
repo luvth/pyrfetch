@@ -216,6 +216,22 @@ ASCII_ARTS = {
 class SystemInfo:
     def __init__(self):
         self._setup_once()
+
+    @lru_cache(maxsize=1)
+    def get_os_name(self):
+        try:
+            with open("/etc/os-release") as f:
+                for line in f:
+                    if line.startswith("ID="):
+                        return line.split("=", 1)[1].strip().strip('"')
+        except FileNotFoundError:
+            pass
+
+        if platform.system() == "Darwin":
+            return "macOS"
+
+        return "Default"
+
         
     @lru_cache(maxsize=1)
     def _setup_once(self):
