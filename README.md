@@ -1,6 +1,6 @@
 # Pyrfetch
 
-![Pyrfetch Example](https://imgur.com/gallery/pyrfetch-v1-3-6elmLBI)
+![Pyrfetch Example](https://i.imgur.com/pyrfetch-v1-3-6elmLBI)
 
 ---
 
