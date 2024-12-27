@@ -76,6 +76,7 @@ DISTRO_COLORS = {
     "OpenSUSE": COLORS["lime"],
     "RedHat": COLORS["red"],
     "Zorin": COLORS["blue"],
+    "NeduOS": COLORS["pink"],
     "Default": COLORS["red"]
 }
 
@@ -212,6 +213,17 @@ ASCII_ARTS = {
         "       ██         ",
         "     ██           ",
         "    ▀▀▀▀▀▀▀▀▀     "
+    ],
+    # me shamelessly adding my own OS
+    "NeduOS": [
+        "  Linux But Smol ",
+        "                 ",
+        "     ██    ██    ",
+        "     ███   ██    ",
+        "     ██ █  ██    ",
+        "     ██  █ ██    ",
+        "     ██   ███    ",
+        "     ██    ██     "
     ],
     # amogos
     "Default": [
