@@ -332,7 +332,10 @@ class SystemInfo:
             
         return "Integrated Graphics"
 
-    # Get network infoconfig
+    # Get network info
+    def get_network_info(self):
+        if hasattr(self, '_network_info'):
+            return self._network_info
             
         self._network_info = {}
         try:
