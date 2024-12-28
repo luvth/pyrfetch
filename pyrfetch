@@ -225,6 +225,15 @@ ASCII_ARTS = {
         "     ██   ███    ",
         "     ██    ██     "
     ],
+    "Image": [
+        "                  ",
+        "                  ",
+        "                  ",
+        "                  ",
+        "                  ",
+        "                  ",
+        "                  "
+    ],
     # amogos
     "Default": [
         "   _______       ",
@@ -420,14 +429,14 @@ class SystemInfo:
 
     # Get distro info, 
     def get_system_info(self, show_percentage=False, include_disk=False, include_temp=False,
-                       export_file=None, distro=None, color="default", ascii="default"):
+                       export_file=None, distro=None, color="default", ascii="default", image=None):
         os_name = distro if distro else self.get_os_name()
 
         # screams of a thousand programmers
         # including me, luvth
         info = self._get_info(distro=distro, show_percentage=show_percentage, include_disk=include_disk, include_temp=include_temp)
 
-        self._print_output(info, os_name, ascii, color)
+        self._print_output(info, os_name, ascii, color, image)
         
         if export_file:
             self._export_info(info, export_file)
@@ -455,14 +464,20 @@ class SystemInfo:
         return f"{days}d {hours}h {minutes}m" if days else f"{hours}h {minutes}m {seconds}s"
 
     # Print all
-    def _print_output(self, info, os_name, ascii, color):
+    def _print_output(self, info, os_name, ascii, color, image):
         ascii_art = (ASCII_ARTS.get(os_name, ASCII_ARTS["Default"]) 
                     if ascii == "default" else self._read_ascii_file(ascii))
+
+        if image: ascii_art = ASCII_ARTS["Image"]
+
         color_code = (DISTRO_COLORS.get(os_name, COLORS["default"]) 
                      if color == "default" else COLORS.get(color, COLORS["default"]))
 
         labels = self._get_labels()
-        print("")
+        if image:
+            os.system(f"kitten icat --place 17x19@0x1 -n {image}")
+        else:
+            print("")
         for i, art_line in enumerate(ascii_art):
             info_line = info[i] if i < len(info) else ""
             label = labels[i] if i < len(labels) else ""
@@ -506,6 +521,7 @@ def main():
     parser.add_argument("--distro", type=str, choices=ASCII_ARTS.keys(), help="Manually specify distribution")
     parser.add_argument("--color", type=str, choices=COLORS.keys(), default="default", help="Choose ASCII art color")
     parser.add_argument("--ascii", type=str, default="default", help="Path to a .txt containing ascii")
+    parser.add_argument("--image", type=str, help="Path to image to screen (only kitty terminal)")
     
     args = parser.parse_args()
 
@@ -517,8 +533,10 @@ def main():
     try:
         sys_info.get_system_info(
             args.percentage, args.disk, args.temp,
-            args.export, args.distro, args.color, args.ascii
+            args.export, args.distro, args.color, args.ascii, args.image
         )
+        # if args.image:
+        #     os.system(f"kitten icat --place 17x19@0x0 {args.image}")
     except KeyboardInterrupt:
         print("\nExiting...")
     except Exception as e:
