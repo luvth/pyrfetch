@@ -49,15 +49,6 @@ COLORS = {
     "bright_blue": "\033[94m",
     "bright_magenta": "\033[95m",
     "bright_cyan": "\033[96m",
-    #Not colors, but , can be useful
-    "bold": "\033[1m",
-    "dim": "\033[2m",
-    "italic": "\033[3m",
-    "underline": "\033[4m",
-    "blink": "\033[5m",
-    "reverse": "\033[7m",
-    "hidden": "\033[8m",
-    "strike": "\033[9m"
 }
 
 # Distro colors based on distro logo 
