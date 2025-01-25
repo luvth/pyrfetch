@@ -54,7 +54,7 @@ COLORS = {
 # Distro colors based on distro logo 
 DISTRO_COLORS = {
     "Arch": COLORS["bright_cyan"],
-    "Gentoo": COLORS["dim"],
+    "Gentoo": COLORS["purple"],
     "Ubuntu": COLORS["orange"],
     "Fedora": COLORS["cyan"],
     "Kali": COLORS["blue"],
